@@ -18,5 +18,9 @@ PrivateTmp=true
 ProtectSystem=full
 ProtectHome=false
 
+KillSignal=SIGTERM
+KillMode=control-group
+TimeoutStopSec=10s
+SuccessExitStatus=130 143
 [Install]
 WantedBy=multi-user.target
