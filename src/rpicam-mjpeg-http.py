@@ -100,6 +100,53 @@ def camera_worker(state: CameraState, args: argparse.Namespace) -> None:
 
 
 class MJPEGHandler(http.server.BaseHTTPRequestHandler):
+
+    def do_HEAD(self):
+        """Return headers for HTTP HEAD probes without streaming a body."""
+        from urllib.parse import parse_qs, urlparse
+
+        parsed = urlparse(self.path)
+        action = parse_qs(parsed.query).get("action", [""])[0]
+
+        # mjpg-streamer-compatible URLs:
+        #   /?action=snapshot
+        #   /?action=stream
+        # plus a few direct aliases useful for probes and dashboards.
+        if parsed.path in ("/stream", "/stream.mjpg", "/video.mjpg"):
+            action = "stream"
+        elif parsed.path in ("/snapshot", "/snapshot.jpg"):
+            action = "snapshot"
+        elif parsed.path not in ("", "/"):
+            self.send_error(404, "Not found")
+            return
+
+        if action in ("", None):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Cache-Control", "no-cache")
+            self.end_headers()
+            return
+
+        if action == "snapshot":
+            self.send_response(200)
+            self.send_header("Content-Type", "image/jpeg")
+            self.send_header("Cache-Control", "no-cache, private")
+            self.send_header("Pragma", "no-cache")
+            self.end_headers()
+            return
+
+        if action == "stream":
+            boundary = globals().get("BOUNDARY", "FRAME")
+            self.send_response(200)
+            self.send_header("Content-Type", f"multipart/x-mixed-replace; boundary={boundary}")
+            self.send_header("Cache-Control", "no-cache, private")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Age", "0")
+            self.end_headers()
+            return
+
+        self.send_error(400, "Unsupported action")
+
     server_version = "rpicam-mjpeg-http/1.0"
 
     def do_GET(self) -> None:
