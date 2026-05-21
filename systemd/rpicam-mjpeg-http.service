@@ -1,0 +1,22 @@
+[Unit]
+Description=Raspberry Pi camera MJPEG HTTP stream
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+SupplementaryGroups=video
+ExecStart=/usr/local/bin/rpicam-mjpeg-http.py --host 0.0.0.0 --port 8080 --width 640 --height 480 --framerate 5
+Restart=always
+RestartSec=5
+
+# Light hardening; keep it conservative because camera stacks may need device access.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target
