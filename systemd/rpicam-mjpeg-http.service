@@ -8,7 +8,7 @@ Type=simple
 User=pi
 Group=pi
 SupplementaryGroups=video
-ExecStart=/usr/local/bin/rpicam-mjpeg-http.py --host 0.0.0.0 --port 8080 --width 640 --height 480 --framerate 5
+ExecStart=/usr/local/bin/rpicam-mjpeg-http.py --host 0.0.0.0 --port 8080 --width 640 --height 480 --framerate 5 --quality 50
 Restart=always
 RestartSec=5
 

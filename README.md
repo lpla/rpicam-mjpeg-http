@@ -14,6 +14,11 @@ This project provides that compatibility layer:
 - MJPEG stream: `http://<raspberrypi-ip>:8080/?action=stream`
 - JPEG snapshot: `http://<raspberrypi-ip>:8080/?action=snapshot`
 
+Alternative aliases are also available:
+
+- Stream: `http://<raspberrypi-ip>:8080/stream.mjpg`
+- Snapshot: `http://<raspberrypi-ip>:8080/snapshot.jpg`
+
 ## Requirements
 
 - Raspberry Pi OS with `rpicam-vid`
@@ -21,9 +26,9 @@ This project provides that compatibility layer:
 - Python 3
 - systemd
 
-Check MJPEG support:
+Check MJPEG and quality support:
 
-    rpicam-vid --help | grep -Ei 'codec|mjpeg|h264'
+    rpicam-vid --help 2>&1 | grep -Ei 'codec|mjpeg|quality|h264'
 
 A short manual camera test:
 
@@ -34,6 +39,7 @@ A short manual camera test:
       --width 640 \
       --height 480 \
       --framerate 5 \
+      --quality 50 \
       -o /tmp/rpicam-test.mjpg
 
     file /tmp/rpicam-test.mjpg
@@ -48,7 +54,42 @@ Clone the repository on the Raspberry Pi:
 
 The default systemd unit runs:
 
-    /usr/local/bin/rpicam-mjpeg-http.py --host 0.0.0.0 --port 8080 --width 640 --height 480 --framerate 5
+    /usr/local/bin/rpicam-mjpeg-http.py --host 0.0.0.0 --port 8080 --width 640 --height 480 --framerate 5 --quality 50
+
+This conservative default is intended for low-power Raspberry Pi devices.
+
+## Quality, resolution and frame-rate tuning
+
+The `--quality` option is passed directly to `rpicam-vid` for MJPEG output. Higher values produce better JPEG frames, but also increase bandwidth, CPU use and memory pressure.
+
+Conservative profile:
+
+    /usr/local/bin/rpicam-mjpeg-http.py --host 0.0.0.0 --port 8080 --width 640 --height 480 --framerate 5 --quality 50
+
+Better quality at the same resolution:
+
+    /usr/local/bin/rpicam-mjpeg-http.py --host 0.0.0.0 --port 8080 --width 640 --height 480 --framerate 10 --quality 75
+
+Higher-quality profile for more capable devices:
+
+    /usr/local/bin/rpicam-mjpeg-http.py --host 0.0.0.0 --port 8080 --width 1280 --height 720 --framerate 10 --quality 85
+
+Very high values such as `--quality 90` or above can be useful on stronger devices or wired LANs, but are usually excessive for small headless Raspberry Pi boards.
+
+To override the systemd command:
+
+    sudo systemctl edit rpicam-mjpeg-http.service
+
+Example override:
+
+    [Service]
+    ExecStart=
+    ExecStart=/usr/local/bin/rpicam-mjpeg-http.py --host 0.0.0.0 --port 8080 --width 1280 --height 720 --framerate 10 --quality 85
+
+Then reload:
+
+    sudo systemctl daemon-reload
+    sudo systemctl restart rpicam-mjpeg-http.service
 
 ## Replace an older raw H264 TCP service
 
@@ -101,7 +142,7 @@ The service keeps one `rpicam-vid --codec mjpeg` process running and serves the 
 
 - 640x480
 - 5 fps
-- MJPEG quality left at rpicam default unless you need to tune bandwidth/CPU
+- quality 50
 
 ## Logs
 
