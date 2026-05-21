@@ -17,12 +17,20 @@ if [ ! -f "$SERVICE_SRC" ]; then
   exit 1
 fi
 
+python3 - <<PY
+from pathlib import Path
+p = Path("$SCRIPT_SRC")
+compile(p.read_text(), str(p), "exec")
+print("Python syntax OK")
+PY
+
 sudo install -o root -g root -m 0755 "$SCRIPT_SRC" "$SCRIPT_DST"
 sudo install -o root -g root -m 0644 "$SERVICE_SRC" "$SERVICE_DST"
 
 sudo systemctl daemon-reload
-sudo systemctl enable --now rpicam-mjpeg-http.service
+sudo systemctl enable rpicam-mjpeg-http.service
+sudo systemctl restart rpicam-mjpeg-http.service
 
 echo
 echo "Installed:"
-systemctl --no-pager --full status rpicam-mjpeg-http.service | sed -n '1,80p'
+systemctl --no-pager --full status rpicam-mjpeg-http.service | sed -n '1,100p'
